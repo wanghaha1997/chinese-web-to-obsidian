@@ -14,7 +14,8 @@ assert.deepEqual(config, {
   sourceFolders: {
     zhihu: "知乎",
     caixin: "财新",
-    zsxq: "知识星球"
+    zsxq: "知识星球",
+    wechat: "微信公众号"
   }
 });
 assert.equal(
@@ -32,7 +33,8 @@ const sourceConfig = normalizeConfig({
   sourceFolders: {
     zhihu: "内容/知乎",
     caixin: "内容/财新",
-    zsxq: "内容/知识星球/"
+    zsxq: "内容/知识星球/",
+    wechat: "内容/微信公众号"
   }
 });
 
@@ -47,6 +49,10 @@ assert.equal(
 assert.equal(
   getTargetDir(sourceConfig, "zsxq"),
   path.join("/Users/ray/Documents/My Vault", "内容/知识星球")
+);
+assert.equal(
+  getTargetDir(sourceConfig, "wechat"),
+  path.join("/Users/ray/Documents/My Vault", "内容/微信公众号")
 );
 
 assert.throws(
@@ -68,7 +74,8 @@ assert.throws(
     sourceFolders: {
       zhihu: "../知乎",
       caixin: "财新",
-      zsxq: "知识星球"
+      zsxq: "知识星球",
+      wechat: "微信公众号"
     }
   }),
   /sourceFolders.zhihu 只能是 Vault 内的相对目录/

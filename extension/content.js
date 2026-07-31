@@ -1,5 +1,9 @@
 (function () {
   function extractCurrentPage() {
+    if (isWechatPage()) {
+      return extractWechatPage();
+    }
+
     if (isCaixinPage()) {
       return extractCaixinPage();
     }
@@ -89,6 +93,66 @@
       author: normalizedAuthor,
       url: location.href,
       html,
+      candidates,
+      warnings
+    };
+  }
+
+  function extractWechatPage() {
+    const title = getFirstText([
+      "#activity-name",
+      ".rich_media_title",
+      "h1"
+    ]) || getMetaContent(["og:title"]);
+    const author = getMetaContent(["author"]) || getFirstText([
+      "#js_author_name_text",
+      "#js_author_name",
+      "#js_name",
+      ".rich_media_meta_nickname"
+    ]);
+    const contentElement = getFirstElement([
+      "#js_content",
+      ".rich_media_content"
+    ]);
+    const html = contentElement ? cleanContentHtml(contentElement) : "";
+    const text = contentElement ? normalizeText(contentElement.textContent) : "";
+    const publishedAt = getFirstText([
+      "#publish_time"
+    ]);
+    const warnings = [];
+
+    if (!title) {
+      warnings.push("未能获取标题，将使用页面标题或默认标题。");
+    }
+
+    if (!author) {
+      warnings.push("未能获取作者，将保存为未知作者。");
+    }
+
+    if (!html) {
+      warnings.push("未能获取正文，请确认微信公众号文章已经加载完成。");
+    }
+
+    const normalizedTitle = title || document.title || "未命名微信公众号文章";
+    const normalizedAuthor = author || "未知作者";
+    const candidates = html ? [{
+      id: "article",
+      label: buildCandidateLabel(1, normalizedAuthor, text),
+      title: normalizedTitle,
+      author: normalizedAuthor,
+      html,
+      textPreview: text.slice(0, 80),
+      url: location.href,
+      publishedAt
+    }] : [];
+
+    return {
+      source: "wechat",
+      title: normalizedTitle,
+      author: normalizedAuthor,
+      url: location.href,
+      html,
+      publishedAt,
       candidates,
       warnings
     };
@@ -333,11 +397,11 @@
       const html = cleanZsxqContentHtml(contentElement);
       const text = normalizeText(contentElement.textContent);
 
-      if (!html || text.length < 1) {
+      if (!html || (text.length < 1 && !contentElement.querySelector("img"))) {
         continue;
       }
 
-      const fingerprint = getTextFingerprint(text);
+      const fingerprint = getTextFingerprint(text || html);
 
       if (seenFingerprints.has(fingerprint)) {
         continue;
@@ -431,7 +495,7 @@
       const element = container.querySelector(selector);
       const textLength = element ? normalizeText(element.textContent).length : 0;
 
-      if (element && textLength >= 1) {
+      if (element && (textLength >= 1 || element.querySelector("img"))) {
         return element;
       }
     }
@@ -452,7 +516,7 @@
       return wrapper;
     }
 
-    return normalizeText(scoped.textContent).length >= 1 ? scoped : null;
+    return normalizeText(scoped.textContent).length >= 1 || scoped.querySelector("img") ? scoped : null;
   }
 
   function buildZsxqAnswerContent(answerContainer) {
@@ -610,6 +674,7 @@
     removeZsxqNoiseNodes(clone);
     removeZsxqCommentNodes(clone);
     unwrapZsxqCustomTags(clone);
+    normalizeImageSources(clone);
 
     if (!clone.querySelector("p, li, h1, h2, h3, h4, blockquote, pre")) {
       const wrapper = document.createElement("div");
@@ -835,7 +900,38 @@
       }
     }
 
+    normalizeImageSources(clone);
     return clone.innerHTML.trim();
+  }
+
+  function normalizeImageSources(root) {
+    for (const image of root.querySelectorAll("img")) {
+      const source = [
+        "data-src",
+        "data-original",
+        "data-actualsrc",
+        "data-lazy-src",
+        "src"
+      ]
+        .map((attribute) => image.getAttribute(attribute))
+        .find((value) => value && !value.startsWith("data:") && !value.startsWith("blob:"));
+
+      if (!source) {
+        continue;
+      }
+
+      try {
+        image.setAttribute("src", new URL(source, location.href).href);
+      } catch (error) {
+        image.setAttribute("src", source);
+      }
+
+      image.removeAttribute("srcset");
+      image.removeAttribute("data-src");
+      image.removeAttribute("data-original");
+      image.removeAttribute("data-actualsrc");
+      image.removeAttribute("data-lazy-src");
+    }
   }
 
   function getPageAuthor() {
@@ -996,6 +1092,10 @@
 
   function isCaixinPage() {
     return /(^|\.)caixin\.com$/.test(location.hostname);
+  }
+
+  function isWechatPage() {
+    return location.hostname === "mp.weixin.qq.com";
   }
 
   function isZsxqPage() {

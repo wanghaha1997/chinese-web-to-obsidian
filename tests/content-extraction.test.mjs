@@ -12,6 +12,7 @@ await testQuestionAnswer();
 await testMultipleQuestionAnswers();
 await testNestedRichTextIsNotDuplicated();
 await testCaixinArticle();
+await testWechatArticle();
 await testZsxqTopics();
 await testZsxqTopicDetailWithComments();
 await testZsxqTitleFromBody();
@@ -150,6 +151,35 @@ async function testCaixinArticle() {
   assertEqual(data.candidates.length, 1, "财新候选数量错误");
 }
 
+async function testWechatArticle() {
+  const data = await extractFromHtml(`<!doctype html>
+    <html>
+      <head>
+        <title>公众号文章标题</title>
+        <meta property="og:title" content="公众号文章标题">
+        <meta name="author" content="署名作者">
+      </head>
+      <body>
+        <h1 id="activity-name">公众号文章标题</h1>
+        <span id="js_author_name_text">署名作者</span>
+        <a id="js_name">测试公众号</a>
+        <em id="publish_time">2026年7月27日 23:45</em>
+        <div id="js_content" class="rich_media_content">
+          <p>这是微信公众号文章正文。</p>
+          <img src="data:image/svg+xml,placeholder" data-src="https://mmbiz.qpic.cn/test/article-image.jpeg" alt="正文图片">
+        </div>
+      </body>
+    </html>`, "https://mp.weixin.qq.com/s/test-article");
+
+  assertEqual(data.source, "wechat", "微信公众号 source 提取失败");
+  assertEqual(data.title, "公众号文章标题", "微信公众号标题提取失败");
+  assertEqual(data.author, "署名作者", "微信公众号作者提取失败");
+  assertEqual(data.publishedAt, "2026年7月27日 23:45", "微信公众号发布时间提取失败");
+  assertIncludes(data.html, "这是微信公众号文章正文", "微信公众号正文提取失败");
+  assertIncludes(data.html, 'src="https://mmbiz.qpic.cn/test/article-image.jpeg"', "微信公众号懒加载图片地址未还原");
+  assertEqual(data.candidates.length, 1, "微信公众号候选数量错误");
+}
+
 async function testZsxqTopics() {
   const data = await extractFromHtml(`<!doctype html>
     <html>
@@ -167,7 +197,10 @@ async function testZsxqTopics() {
               </app-topic-header>
               <app-talk-content>
                 <div class="talk-content-container">
-                  <div class="content"><p>这是知识星球第一条内容，适合保存到 Obsidian。</p></div>
+                  <div class="content">
+                    <p>这是知识星球第一条内容，适合保存到 Obsidian。</p>
+                    <img data-src="https://images.zsxq.com/test/topic-image.png" alt="星球图片">
+                  </div>
                 </div>
               </app-talk-content>
               <div class="comment-box">
@@ -207,6 +240,7 @@ async function testZsxqTopics() {
   assertEqual(data.candidates[0].comments.length, 1, "知识星球评论数量错误");
   assertEqual(data.candidates[0].comments[0].author, "读者甲", "知识星球评论作者错误");
   assertIncludes(data.candidates[0].html, "这是知识星球第一条内容", "知识星球正文不应包含评论");
+  assertIncludes(data.candidates[0].html, 'src="https://images.zsxq.com/test/topic-image.png"', "知识星球图片地址未保留");
   assertEqual(data.candidates[1].author, "星球作者 B", "知识星球第二个候选作者错误");
 }
 

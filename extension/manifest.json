@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "中文网页保存到 Obsidian",
-  "version": "0.8.1",
-  "description": "将当前已渲染的知乎、财新或知识星球内容保存到本地 Obsidian Vault。",
+  "version": "0.9.0",
+  "description": "将当前已渲染的知乎、财新、知识星球或微信公众号内容保存到本地 Obsidian Vault。",
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",
@@ -31,7 +31,8 @@
         "https://www.zhihu.com/question/*",
         "https://zhuanlan.zhihu.com/p/*",
         "https://*.caixin.com/*",
-        "https://*.zsxq.com/*"
+        "https://*.zsxq.com/*",
+        "https://mp.weixin.qq.com/s/*"
       ],
       "js": [
         "content.js"

@@ -18,7 +18,7 @@ Use the email address associated with the applicant's ChatGPT account. Do not co
 Maximum: 500 characters.
 
 ```text
-Chinese Web to Obsidian fills a gap in the Chinese knowledge-management ecosystem: it saves user-visible content from Zhihu, Caixin, and Zsxq to open Markdown without cloud clipping or private site APIs. The public MIT project includes automated extraction and Markdown tests, a documented privacy boundary, and packaged releases. I am the creator and primary maintainer responsible for compatibility fixes, issues, security, and releases.
+Chinese Web to Obsidian fills a gap in the Chinese knowledge-management ecosystem: it saves user-visible content from Zhihu, Caixin, Zsxq, and WeChat Official Account articles to open Markdown without cloud clipping or private site APIs. The public MIT project includes automated extraction, image-localization, and Markdown tests, a documented privacy boundary, and packaged releases. I am the creator and primary maintainer responsible for compatibility fixes, issues, security, and releases.
 ```
 
 Before submission, add only truthful adoption evidence that exists at that time, such as genuine users, release downloads, GitHub stars, resolved Issues, or external contributions.

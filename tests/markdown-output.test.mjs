@@ -37,6 +37,22 @@ assertIncludes(caixinMarkdown, "source: 财新", "财新 source 应写入中文�
 assertIncludes(caixinMarkdown, "  - 财新", "财新标签应写入 Markdown");
 assertIncludes(caixinMarkdown, 'author: "[[于海荣]]"', "财新作者应保存为 Obsidian 内部链接");
 
+const wechatMarkdown = buildMarkdown({
+  source: "wechat",
+  title: "公众号测试标题",
+  author: "署名作者",
+  url: "https://mp.weixin.qq.com/s/test",
+  html: '<p>公众号测试正文。</p><img src="./公众号测试标题.assets/image-001.jpg" alt="正文图片">',
+  publishedAt: "2026-07-27 23:45",
+  savedAt: "2026-07-31T12:00:00.000Z"
+});
+
+assertIncludes(wechatMarkdown, "source: 微信公众号", "微信公众号 source 应写入中文来源");
+assertIncludes(wechatMarkdown, "  - 微信公众号", "微信公众号标签应写入 Markdown");
+assertIncludes(wechatMarkdown, 'author: "[[署名作者]]"', "微信公众号作者应保存为 Obsidian 内部链接");
+assertIncludes(wechatMarkdown, 'published_at: "2026-07-27"', "微信公众号发布时间应转成标准日期");
+assertIncludes(wechatMarkdown, "![正文图片](./公众号测试标题.assets/image-001.jpg)", "微信公众号本地图片链接应写入 Markdown");
+
 const zsxqMarkdown = buildMarkdown({
   source: "zsxq",
   title: "知识星球测试标题",

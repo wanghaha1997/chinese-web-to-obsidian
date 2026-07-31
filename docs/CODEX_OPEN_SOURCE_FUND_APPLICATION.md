@@ -22,7 +22,7 @@ Chinese Web to Obsidian is a local-first, open-source Chrome extension and Node.
 
 ## Why does this repository qualify?
 
-This project addresses a practical gap for Chinese-language knowledge workflows: preserving user-visible web content in an open Markdown format without sending it to a third-party clipping service. It is actively maintained, has automated extraction and Markdown regression tests, and supports three sites with different rendering structures. Funding would help turn a working personal tool into a more reliable community-maintained project with broader test coverage, clearer releases, and faster compatibility fixes when supported sites change their DOM.
+This project addresses a practical gap for Chinese-language knowledge workflows: preserving user-visible web content in an open Markdown format without sending it to a third-party clipping service. It is actively maintained, has automated extraction, image-localization, and Markdown regression tests, and supports four sites with different rendering structures. Funding would help turn a working personal tool into a more reliable community-maintained project with broader test coverage, clearer releases, and faster compatibility fixes when supported sites change their DOM.
 
 提交时请在这一段补充真实、可验证的数据，例如 GitHub stars、forks、Issues、贡献者数量或实际用户反馈。没有数据时不要编造。
 

@@ -1,8 +1,8 @@
 {
   "name": "chinese-web-to-obsidian",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "private": true,
-  "description": "Save rendered Zhihu, Caixin, and Zsxq content to a local Obsidian vault.",
+  "description": "Save rendered Zhihu, Caixin, Zsxq, and WeChat articles to a local Obsidian vault.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/wanghaha1997/chinese-web-to-obsidian.git"
@@ -14,6 +14,7 @@
   "license": "MIT",
   "keywords": [
     "zhihu",
+    "wechat",
     "obsidian",
     "markdown",
     "chrome-extension"
@@ -24,14 +25,12 @@
   },
   "scripts": {
     "start": "node server/index.js",
-    "test": "node tests/content-extraction.test.mjs && node tests/markdown-output.test.mjs && node tests/config-validation.test.mjs"
+    "test": "node tests/content-extraction.test.mjs && node tests/markdown-output.test.mjs && node tests/config-validation.test.mjs && node tests/image-localization.test.mjs"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.19.2",
+    "jsdom": "^29.1.1",
     "turndown": "^7.2.0"
-  },
-  "devDependencies": {
-    "jsdom": "^29.1.1"
   }
 }

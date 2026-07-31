@@ -19,6 +19,7 @@ const saveFolderInput = document.getElementById("saveFolder");
 const zhihuFolderInput = document.getElementById("zhihuFolder");
 const caixinFolderInput = document.getElementById("caixinFolder");
 const zsxqFolderInput = document.getElementById("zsxqFolder");
+const wechatFolderInput = document.getElementById("wechatFolder");
 const targetDirElement = document.getElementById("targetDir");
 let pageData = null;
 let selectedCandidate = null;
@@ -66,7 +67,7 @@ async function init() {
     authorElement.textContent = "未能读取";
     urlElement.textContent = "未能读取";
     saveButton.disabled = true;
-    setStatus(`读取失败：${error.message}\n请确认当前标签页是知乎问题回答页、知乎专栏文章页、财新文章页或知识星球内容页。`, "error");
+    setStatus(`读取失败：${error.message}\n请确认当前标签页是知乎、财新、知识星球或微信公众号的受支持页面。`, "error");
   }
 }
 
@@ -82,7 +83,7 @@ async function saveToObsidian() {
   setStatus(candidatesToSave.length > 1 ? `正在保存 1/${candidatesToSave.length}...` : "正在保存...");
 
   try {
-    const savedPaths = [];
+    const savedResults = [];
 
     for (let index = 0; index < candidatesToSave.length; index += 1) {
       if (candidatesToSave.length > 1) {
@@ -90,13 +91,16 @@ async function saveToObsidian() {
       }
 
       const result = await saveCandidateToObsidian(candidatesToSave[index]);
-      savedPaths.push(result.path);
+      savedResults.push(result);
     }
 
+    const savedPaths = savedResults.map((result) => result.path);
+    const imageSummary = getSavedImageSummary(savedResults);
+
     if (savedPaths.length === 1) {
-      setStatus(`保存成功：${savedPaths[0]}`, "success");
+      setStatus(`保存成功：${savedPaths[0]}${imageSummary}`, "success");
     } else {
-      setStatus(`保存成功：${savedPaths.length} 条\n最后保存：${savedPaths[savedPaths.length - 1]}`, "success");
+      setStatus(`保存成功：${savedPaths.length} 条\n最后保存：${savedPaths[savedPaths.length - 1]}${imageSummary}`, "success");
     }
 
     saveButton.disabled = false;
@@ -104,6 +108,18 @@ async function saveToObsidian() {
     setStatus(`保存失败：${error.message}\n请确认 Node.js 服务已经启动。`, "error");
     saveButton.disabled = false;
   }
+}
+
+function getSavedImageSummary(results) {
+  const downloaded = results.reduce((total, result) => total + (result.images?.downloaded || 0), 0);
+  const failed = results.reduce((total, result) => total + (result.images?.failed || 0), 0);
+
+  if (downloaded === 0 && failed === 0) {
+    return "";
+  }
+
+  const failedText = failed > 0 ? `，${failed} 张保留原链接` : "";
+  return `\n图片：本地保存 ${downloaded} 张${failedText}`;
 }
 
 async function saveCandidateToObsidian(saveCandidate) {
@@ -185,8 +201,8 @@ async function saveConfig() {
   const saveFolder = saveFolderInput.value.trim();
   const sourceFolders = getSourceFoldersFromInputs();
 
-  if (!vaultPath || !saveFolder || !sourceFolders.zhihu || !sourceFolders.caixin || !sourceFolders.zsxq) {
-    setStatus("请填写 Vault 路径、Vault 内文件夹，以及三个来源的保存文件夹。", "error");
+  if (!vaultPath || !saveFolder || !sourceFolders.zhihu || !sourceFolders.caixin || !sourceFolders.zsxq || !sourceFolders.wechat) {
+    setStatus("请填写 Vault 路径、Vault 内文件夹，以及四个来源的保存文件夹。", "error");
     return;
   }
 
@@ -227,6 +243,7 @@ function renderConfig(config) {
   zhihuFolderInput.value = config.sourceFolders?.zhihu || "知乎";
   caixinFolderInput.value = config.sourceFolders?.caixin || "财新";
   zsxqFolderInput.value = config.sourceFolders?.zsxq || "知识星球";
+  wechatFolderInput.value = config.sourceFolders?.wechat || "微信公众号";
   updateTargetDirDisplay();
 }
 
@@ -247,7 +264,8 @@ function getSourceFoldersFromInputs() {
   return {
     zhihu: zhihuFolderInput.value.trim(),
     caixin: caixinFolderInput.value.trim(),
-    zsxq: zsxqFolderInput.value.trim()
+    zsxq: zsxqFolderInput.value.trim(),
+    wechat: wechatFolderInput.value.trim()
   };
 }
 

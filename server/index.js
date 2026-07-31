@@ -6,11 +6,14 @@ import { promisify } from "node:util";
 
 import cors from "cors";
 import express from "express";
+import { JSDOM } from "jsdom";
 import TurndownService from "turndown";
 
 export {
   buildMarkdown,
+  getAvailableFilePath,
   getTargetDir,
+  localizeImages,
   normalizeConfig
 };
 
@@ -28,13 +31,18 @@ const turndownService = new TurndownService({
 const SOURCES = {
   zhihu: "知乎",
   caixin: "财新",
-  zsxq: "知识星球"
+  zsxq: "知识星球",
+  wechat: "微信公众号"
 };
 const DEFAULT_SOURCE_FOLDERS = {
   zhihu: "知乎",
   caixin: "财新",
-  zsxq: "知识星球"
+  zsxq: "知识星球",
+  wechat: "微信公众号"
 };
+const IMAGE_LOCALIZATION_SOURCES = new Set(["zsxq", "wechat"]);
+const MAX_IMAGE_BYTES = 15 * 1024 * 1024;
+const IMAGE_DOWNLOAD_TIMEOUT_MS = 15000;
 
 app.disable("x-powered-by");
 app.use(cors({
@@ -124,15 +132,26 @@ app.post("/save", async (req, res, next) => {
     const targetDir = getTargetDir(config, payload.source);
     await fs.mkdir(targetDir, { recursive: true });
 
-    const markdown = buildMarkdown(payload);
     const targetPath = await getAvailableFilePath(targetDir, payload.title);
+    const localized = await localizeImages(payload, targetPath);
+    const markdown = buildMarkdown({
+      ...payload,
+      html: localized.html
+    });
 
     await fs.writeFile(targetPath, markdown, "utf8");
 
-    console.log(`已保存：${targetPath}`);
+    const imageSummary = localized.downloadedCount > 0
+      ? `，图片 ${localized.downloadedCount} 张`
+      : "";
+    console.log(`已保存：${targetPath}${imageSummary}`);
     res.json({
       ok: true,
-      path: targetPath
+      path: targetPath,
+      images: {
+        downloaded: localized.downloadedCount,
+        failed: localized.failedCount
+      }
     });
   } catch (error) {
     next(error);
@@ -154,7 +173,7 @@ app.use((error, req, res, next) => {
   });
 });
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   app.listen(PORT, HOST, () => {
     console.log(`保存到 Obsidian 服务已启动：http://${HOST}:${PORT}`);
   });
@@ -305,7 +324,7 @@ function normalizePayload(body) {
     throw userError("请求体必须是 JSON 对象");
   }
 
-  const title = cleanText(body.title) || "未命名知乎内容";
+  const title = cleanText(body.title) || "未命名网页内容";
   const author = cleanText(body.author) || "未知作者";
   const url = cleanText(body.url);
   const html = typeof body.html === "string" ? body.html : "";
@@ -351,6 +370,149 @@ function normalizeComments(value) {
     .filter((comment) => comment.text || comment.html);
 }
 
+async function localizeImages(payload, targetPath, options = {}) {
+  if (!IMAGE_LOCALIZATION_SOURCES.has(payload.source)) {
+    return {
+      html: payload.html,
+      downloadedCount: 0,
+      failedCount: 0
+    };
+  }
+
+  const dom = new JSDOM(`<body>${payload.html}</body>`);
+  const images = Array.from(dom.window.document.body.querySelectorAll("img[src]"));
+  const fetchImpl = options.fetchImpl || fetch;
+  const noteName = path.basename(targetPath, path.extname(targetPath));
+  const assetsFolderName = `${noteName}.assets`;
+  const assetsDir = getAssetsDirectory(targetPath);
+  const downloadedByUrl = new Map();
+  let downloadedCount = 0;
+  let failedCount = 0;
+
+  for (const image of images) {
+    const sourceUrl = image.getAttribute("src");
+
+    if (!isAllowedImageUrl(sourceUrl, payload.source)) {
+      continue;
+    }
+
+    if (downloadedByUrl.has(sourceUrl)) {
+      image.setAttribute("src", downloadedByUrl.get(sourceUrl));
+      continue;
+    }
+
+    try {
+      const response = await fetchImage(fetchImpl, sourceUrl);
+      const contentType = (response.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+      const contentLength = Number(response.headers.get("content-length") || 0);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      if (!contentType.startsWith("image/")) {
+        throw new Error(`响应不是图片：${contentType || "未知类型"}`);
+      }
+
+      if (contentLength > MAX_IMAGE_BYTES) {
+        throw new Error("图片超过 15 MB");
+      }
+
+      const buffer = Buffer.from(await response.arrayBuffer());
+
+      if (buffer.length > MAX_IMAGE_BYTES) {
+        throw new Error("图片超过 15 MB");
+      }
+
+      const extension = getImageExtension(contentType, sourceUrl);
+      const fileName = `image-${String(downloadedCount + 1).padStart(3, "0")}${extension}`;
+      const filePath = path.join(assetsDir, fileName);
+      const relativePath = encodeURI(`./${assetsFolderName}/${fileName}`).replace(/#/g, "%23");
+
+      await fs.mkdir(assetsDir, { recursive: true });
+      await fs.writeFile(filePath, buffer);
+      image.setAttribute("src", relativePath);
+      downloadedByUrl.set(sourceUrl, relativePath);
+      downloadedCount += 1;
+    } catch (error) {
+      failedCount += 1;
+      console.warn(`图片下载失败，保留原链接：${safeImageHost(sourceUrl)}（${error.message}）`);
+    }
+  }
+
+  return {
+    html: dom.window.document.body.innerHTML,
+    downloadedCount,
+    failedCount
+  };
+}
+
+async function fetchImage(fetchImpl, sourceUrl) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), IMAGE_DOWNLOAD_TIMEOUT_MS);
+
+  try {
+    return await fetchImpl(sourceUrl, {
+      signal: controller.signal,
+      redirect: "error"
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function isAllowedImageUrl(value, source) {
+  let url;
+
+  try {
+    url = new URL(value);
+  } catch (error) {
+    return false;
+  }
+
+  if (!["http:", "https:"].includes(url.protocol)) {
+    return false;
+  }
+
+  if (source === "zsxq") {
+    return url.hostname === "zsxq.com" || url.hostname.endsWith(".zsxq.com");
+  }
+
+  if (source === "wechat") {
+    return url.hostname === "qpic.cn" || url.hostname.endsWith(".qpic.cn");
+  }
+
+  return false;
+}
+
+function getImageExtension(contentType, sourceUrl) {
+  const extensions = {
+    "image/avif": ".avif",
+    "image/gif": ".gif",
+    "image/jpeg": ".jpg",
+    "image/jpg": ".jpg",
+    "image/png": ".png",
+    "image/x-png": ".png",
+    "image/svg+xml": ".svg",
+    "image/webp": ".webp"
+  };
+
+  if (extensions[contentType]) {
+    return extensions[contentType];
+  }
+
+  const extension = path.extname(new URL(sourceUrl).pathname).toLowerCase();
+  return /^\.(avif|gif|jpe?g|png|svg|webp)$/.test(extension) ? extension : ".img";
+}
+
+function safeImageHost(value) {
+  try {
+    return new URL(value).hostname;
+  } catch (error) {
+    return "未知地址";
+  }
+}
+
 function buildMarkdown(payload) {
   let markdownBody = turndownService.turndown(payload.html).trim();
 
@@ -366,7 +528,8 @@ function buildMarkdown(payload) {
   const url = escapeYamlValue(payload.url);
   const sourceLabel = SOURCES[payload.source] || payload.source;
   const planetLine = payload.planet ? `planet: ${escapeYamlValue(payload.planet)}\n` : "";
-  const publishedLine = payload.publishedAt ? `published_at: ${escapeYamlValue(payload.publishedAt.slice(0, 10))}\n` : "";
+  const publishedDate = formatSourceDate(payload.publishedAt);
+  const publishedLine = publishedDate ? `published_at: ${escapeYamlValue(publishedDate)}\n` : "";
   const planetTag = payload.planet ? `\n  - ${sanitizeYamlListItem(payload.planet)}` : "";
   const intro = payload.source === "zsxq"
     ? buildZsxqIntro(payload)
@@ -384,7 +547,7 @@ function buildZsxqIntro(payload) {
   }
 
   if (payload.publishedAt) {
-    parts.push(payload.publishedAt.slice(0, 10));
+    parts.push(formatSourceDate(payload.publishedAt));
   }
 
   parts.push(`[原文](${payload.url})`);
@@ -426,11 +589,20 @@ async function getAvailableFilePath(targetDir, title) {
   const baseName = sanitizeFileName(title) || "未命名知乎内容";
   let candidate = path.join(targetDir, `${baseName}.md`);
 
-  for (let index = 1; await fileExists(candidate); index += 1) {
+  for (let index = 1; await noteOutputExists(candidate); index += 1) {
     candidate = path.join(targetDir, `${baseName}-${index}.md`);
   }
 
   return candidate;
+}
+
+async function noteOutputExists(notePath) {
+  return await fileExists(notePath) || await fileExists(getAssetsDirectory(notePath));
+}
+
+function getAssetsDirectory(notePath) {
+  const extension = path.extname(notePath);
+  return `${notePath.slice(0, -extension.length)}.assets`;
 }
 
 async function fileExists(filePath) {
@@ -465,6 +637,19 @@ function parseSavedAt(value) {
 
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
+}
+
+function formatSourceDate(value) {
+  const text = cleanText(value);
+  const chineseDate = text.match(/^(\d{4})年(\d{1,2})月(\d{1,2})日/);
+
+  if (chineseDate) {
+    const [, year, month, day] = chineseDate;
+    return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+  }
+
+  const isoDate = text.match(/^(\d{4}-\d{2}-\d{2})/);
+  return isoDate ? isoDate[1] : text.slice(0, 10);
 }
 
 function escapeYamlValue(value) {

@@ -24,6 +24,7 @@ A local-first Chrome extension and Node.js service that saves rendered content f
 
 - Save one selected answer or all currently visible candidates.
 - Preserve title, author, source URL, and rendered body content.
+- Save rendered Zsxq and WeChat article images beside the Markdown note.
 - Link authors with Obsidian `[[internal links]]`.
 - Route each supported source to its own vault folder.
 - Keep captured content on the user's computer.
@@ -35,6 +36,7 @@ A local-first Chrome extension and Node.js service that saves rendered content f
 | Zhihu | Question answers and column articles | Select one answer or save all visible answers |
 | Caixin | Opened and rendered article pages | Does not bypass subscriptions or access controls |
 | Zsxq | Visible topics and already displayed comments | Comments are not saved by default |
+| WeChat Official Accounts | Opened and rendered article pages | Saves the byline author, publish time, body, and images |
 
 The extension reads only content that is already rendered in the current browser tab. It does not read site cookies, call private site APIs, simulate login, or bypass paywalls.
 
@@ -70,7 +72,8 @@ Edit `config.json` and set `vaultPath` to the absolute path of your Obsidian vau
   "sourceFolders": {
     "zhihu": "Zhihu",
     "caixin": "Caixin",
-    "zsxq": "Zsxq"
+    "zsxq": "Zsxq",
+    "wechat": "WeChat"
   }
 }
 ```
@@ -91,7 +94,7 @@ Then open `chrome://extensions/`, enable Developer mode, choose **Load unpacked*
 
 ## Privacy
 
-Captured content is sent only to the local service at `127.0.0.1:3721` and written to the configured vault. The project does not include analytics, cloud storage, user accounts, or AI summarization. See [PRIVACY.md](PRIVACY.md).
+Captured content is sent only to the local service at `127.0.0.1:3721` and written to the configured vault. For Zsxq and WeChat articles, the local service may download rendered images directly from the source image CDN without site cookies. The project does not include analytics, cloud storage, user accounts, or AI summarization. See [PRIVACY.md](PRIVACY.md).
 
 ## Development
 
