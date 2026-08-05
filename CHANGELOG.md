@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.9.1] - 2026-08-05
+
+### Added
+
+- Prefix every saved note title and filename with the local save date, for example `8.06 Article title`.
+- Avoid adding a second date when the title already starts with an `M.DD` prefix.
+
 ## [0.9.0] - 2026-07-31
 
 ### Added
@@ -40,5 +47,6 @@ First public release under the name **Chinese Web to Obsidian**.
 - The extension reads only content rendered in the active tab.
 - No site cookies, credentials, private APIs, analytics, or cloud content storage are used.
 
+[0.9.1]: https://github.com/wanghaha1997/chinese-web-to-obsidian/releases/tag/v0.9.1
 [0.9.0]: https://github.com/wanghaha1997/chinese-web-to-obsidian/releases/tag/v0.9.0
 [0.8.1]: https://github.com/wanghaha1997/chinese-web-to-obsidian/releases/tag/v0.8.1

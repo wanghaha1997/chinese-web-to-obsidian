@@ -10,6 +10,7 @@ import { JSDOM } from "jsdom";
 import TurndownService from "turndown";
 
 export {
+  addSaveDatePrefix,
   buildMarkdown,
   getAvailableFilePath,
   getTargetDir,
@@ -324,11 +325,12 @@ function normalizePayload(body) {
     throw userError("请求体必须是 JSON 对象");
   }
 
-  const title = cleanText(body.title) || "未命名网页内容";
+  const rawTitle = cleanText(body.title) || "未命名网页内容";
   const author = cleanText(body.author) || "未知作者";
   const url = cleanText(body.url);
   const html = typeof body.html === "string" ? body.html : "";
   const savedAt = parseSavedAt(body.savedAt);
+  const title = addSaveDatePrefix(rawTitle, savedAt);
 
   if (!SOURCES[body.source]) {
     throw userError(`source 必须是以下值之一：${Object.keys(SOURCES).join(", ")}`);
@@ -521,7 +523,7 @@ function buildMarkdown(payload) {
   }
 
   const commentsSection = buildCommentsMarkdown(payload.comments);
-  const savedDate = payload.savedAt.slice(0, 10);
+  const savedDate = formatLocalSaveDate(payload.savedAt);
   const title = escapeYamlValue(payload.title);
   const authorLink = createObsidianLink(payload.author);
   const author = escapeYamlValue(authorLink);
@@ -637,6 +639,33 @@ function parseSavedAt(value) {
 
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
+}
+
+function addSaveDatePrefix(title, savedAt) {
+  const normalizedTitle = cleanText(title) || "未命名网页内容";
+
+  if (/^\d{1,2}\.\d{2}(?:\s|$)/.test(normalizedTitle)) {
+    return normalizedTitle;
+  }
+
+  const { month, day } = getLocalSaveDateParts(savedAt);
+  return `${month}.${day} ${normalizedTitle}`;
+}
+
+function formatLocalSaveDate(savedAt) {
+  const { year, month, day } = getLocalSaveDateParts(savedAt);
+  return `${year}-${String(month).padStart(2, "0")}-${day}`;
+}
+
+function getLocalSaveDateParts(savedAt) {
+  const parsedDate = new Date(savedAt);
+  const date = Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+
+  return {
+    year: date.getFullYear(),
+    month: date.getMonth() + 1,
+    day: String(date.getDate()).padStart(2, "0")
+  };
 }
 
 function formatSourceDate(value) {

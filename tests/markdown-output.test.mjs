@@ -1,15 +1,26 @@
-import { buildMarkdown } from "../server/index.js";
+import { addSaveDatePrefix, buildMarkdown } from "../server/index.js";
+
+const datedTitle = addSaveDatePrefix("测试标题", "2026-08-06T12:00:00.000Z");
+assertEqual(datedTitle, "8.06 测试标题", "标题应增加保存日期前缀");
+assertEqual(
+  addSaveDatePrefix(datedTitle, "2026-08-06T12:00:00.000Z"),
+  datedTitle,
+  "已有日期前缀时不应重复添加"
+);
 
 const markdown = buildMarkdown({
   source: "zhihu",
-  title: "测试标题",
+  title: datedTitle,
   author: "答主 A",
   url: "https://www.zhihu.com/question/1/answer/2",
   html: "<p>测试正文。</p>",
-  savedAt: "2026-06-24T12:00:00.000Z"
+  savedAt: "2026-08-06T12:00:00.000Z"
 });
 
 assertIncludes(markdown, 'author: "[[答主 A]]"', "frontmatter 作者应保存为 Obsidian 内部链接");
+assertIncludes(markdown, 'title: "8.06 测试标题"', "frontmatter 标题应包含保存日期");
+assertIncludes(markdown, "saved_at: 2026-08-06", "saved_at 应与本地保存日期一致");
+assertIncludes(markdown, "# 8.06 测试标题", "正文标题应包含保存日期");
 assertIncludes(markdown, "> 作者：[[答主 A]]", "正文作者应保存为 Obsidian 内部链接");
 assertIncludes(markdown, "测试正文。", "正文转换失败");
 
@@ -117,5 +128,11 @@ function assertIncludes(actual, expected, message) {
 function assertNotIncludes(actual, expected, message) {
   if (actual.includes(expected)) {
     throw new Error(`${message}，实际内容：${actual}`);
+  }
+}
+
+function assertEqual(actual, expected, message) {
+  if (actual !== expected) {
+    throw new Error(`${message}，实际值：${actual}`);
   }
 }

@@ -29,6 +29,7 @@
 
 - **选对内容再保存**：知乎问题页和知识星球列表页可选择单条内容，也可一次保存当前页面的全部候选内容。
 - **适合 Obsidian 整理**：保留标题、作者、来源和原文链接，作者会写成 `[[内部链接]]`，便于关联同一作者的其他笔记。
+- **标题自动带日期**：保存时按本地日期添加 `M.DD` 前缀，例如 `8.06 文章标题`。
 - **图片落到 Vault**：知识星球和微信公众号正文图片会保存到笔记旁的资源目录，下载失败时保留原图链接。
 - **不同来源自动归档**：知乎、财新、知识星球、微信公众号可以分别设置默认文件夹。
 - **内容留在本机**：扩展只把当前页面已显示的内容发送到 `127.0.0.1` 本地服务，不依赖云端剪藏服务。
@@ -284,17 +285,17 @@ logs/server.err.log
 保存后的 Markdown 文件位置会按来源区分，类似：
 
 ```text
-/Users/你的用户名/Documents/ObsidianVault/知乎/文章标题.md
-/Users/你的用户名/Documents/ObsidianVault/财新/文章标题.md
-/Users/你的用户名/Documents/ObsidianVault/知识星球/文章标题.md
-/Users/你的用户名/Documents/ObsidianVault/微信公众号/文章标题.md
+/Users/你的用户名/Documents/ObsidianVault/知乎/8.06 文章标题.md
+/Users/你的用户名/Documents/ObsidianVault/财新/8.06 文章标题.md
+/Users/你的用户名/Documents/ObsidianVault/知识星球/8.06 文章标题.md
+/Users/你的用户名/Documents/ObsidianVault/微信公众号/8.06 文章标题.md
 ```
 
 如果同名文件已经存在，服务会自动保存成：
 
 ```text
-文章标题-1.md
-文章标题-2.md
+8.06 文章标题-1.md
+8.06 文章标题-2.md
 ```
 
 ## 生成的 Markdown 格式
@@ -305,15 +306,15 @@ logs/server.err.log
 知识星球和微信公众号图片会保存在 Markdown 文件旁边，例如：
 
 ```text
-微信公众号/文章标题.md
-微信公众号/文章标题.assets/image-001.jpg
+微信公众号/8.06 文章标题.md
+微信公众号/8.06 文章标题.assets/image-001.jpg
 ```
 
 Markdown 中使用相对路径引用图片，移动整个来源文件夹后仍可正常关联。
 
 ```md
 ---
-title: 文章标题
+title: 8.06 文章标题
 author: "[[作者名称]]"
 source: 知乎
 url: 原文链接
@@ -323,7 +324,7 @@ tags:
   - 待整理
 ---
 
-# 文章标题
+# 8.06 文章标题
 
 > 作者：[[作者名称]]
 > 原文：原文链接

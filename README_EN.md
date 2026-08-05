@@ -24,6 +24,7 @@ A local-first Chrome extension and Node.js service that saves rendered content f
 
 - Save one selected answer or all currently visible candidates.
 - Preserve title, author, source URL, and rendered body content.
+- Prefix saved note titles and filenames with the local save date, such as `8.06 Article title`.
 - Save rendered Zsxq and WeChat article images beside the Markdown note.
 - Link authors with Obsidian `[[internal links]]`.
 - Route each supported source to its own vault folder.
