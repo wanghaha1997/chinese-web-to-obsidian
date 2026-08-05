@@ -1,6 +1,6 @@
 # Privacy Policy
 
-Last updated: 2026-07-31
+Last updated: 2026-08-05
 
 Chinese Web to Obsidian is a local-first Chrome extension and local Node.js service.
 
@@ -12,12 +12,12 @@ When the user clicks the extension, it may read the following information from t
 - Author name
 - Original page URL
 - HTML content already rendered in the page
-- Image URLs already present in rendered Zsxq or WeChat article content
+- Image URLs already present in rendered article or answer content
 - Comments already displayed on a supported Zsxq page, only when the user chooses to include them
 
 ## How data is used
 
-The extension sends this information only to `http://127.0.0.1:3721`, where the local service converts it to Markdown and writes it to the Obsidian vault configured by the user. For supported Zsxq and WeChat article images, the local service requests the original image URL from the source image CDN and saves the response beside the Markdown note. These requests do not include site cookies or article body content.
+The extension sends this information only to `http://127.0.0.1:3721`, where the local service converts it to Markdown and writes it to the Obsidian vault configured by the user. For supported inline images, the local service requests the original image URL from an allowlisted source image host and saves the response beside the Markdown note. These requests do not include site cookies or article body content.
 
 ## Data collection and sharing
 
@@ -41,7 +41,7 @@ The extension does not maintain a remote database. Saved Markdown files remain i
 
 ## Source image hosts
 
-The project does not transmit captured article text to third-party services. Image downloads contact only allowlisted source image hosts under `zsxq.com` or `qpic.cn`; if a download fails, the Markdown keeps the original remote image URL. If the user's vault is stored in a separately configured synchronization service such as OneDrive or iCloud, that synchronization is controlled by the user and is outside this project's operation.
+The project does not transmit captured article text to third-party services. Image downloads contact only allowlisted source image hosts under `zhimg.com`, `caixin.com`, `zsxq.com`, or `qpic.cn`; if a download fails, the Markdown keeps the original remote image URL. If the user's vault is stored in a separately configured synchronization service such as OneDrive or iCloud, that synchronization is controlled by the user and is outside this project's operation.
 
 ## Changes
 

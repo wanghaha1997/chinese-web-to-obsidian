@@ -8,12 +8,62 @@ import { buildMarkdown, getAvailableFilePath, localizeImages } from "../server/i
 const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "chinese-web-images-"));
 
 try {
+  await testZhihuImages(tempDir);
+  await testCaixinImages(tempDir);
   await testWechatImages(tempDir);
   await testZsxqImageFailure(tempDir);
   await testAssetDirectoryCollision(tempDir);
   console.log("image localization tests passed");
 } finally {
   await fs.rm(tempDir, { recursive: true, force: true });
+}
+
+async function testZhihuImages(rootDir) {
+  await testAllowedSourceImage(rootDir, {
+    source: "zhihu",
+    imageUrl: "https://picx.zhimg.com/test/article-image.png",
+    noteName: "知乎文章",
+    contentType: "image/png",
+    extension: "png"
+  });
+}
+
+async function testCaixinImages(rootDir) {
+  await testAllowedSourceImage(rootDir, {
+    source: "caixin",
+    imageUrl: "https://img.caixin.com/test/article-image.webp",
+    noteName: "财新文章",
+    contentType: "image/webp",
+    extension: "webp"
+  });
+}
+
+async function testAllowedSourceImage(rootDir, options) {
+  const targetPath = path.join(rootDir, `${options.noteName}.md`);
+  let requestCount = 0;
+  const result = await localizeImages({
+    source: options.source,
+    html: `<p>正文</p><img src="${options.imageUrl}" alt="正文图片">`
+  }, targetPath, {
+    fetchImpl: async () => {
+      requestCount += 1;
+      return new Response(Buffer.from([1, 2, 3, 4]), {
+        status: 200,
+        headers: {
+          "content-type": options.contentType,
+          "content-length": "4"
+        }
+      });
+    }
+  });
+
+  assert.equal(requestCount, 1, `${options.source} 图片应下载一次`);
+  assert.equal(result.downloadedCount, 1, `${options.source} 图片下载数量错误`);
+  assert.equal(result.failedCount, 0, `${options.source} 图片不应下载失败`);
+  assert.match(result.html, new RegExp(`image-001\\.${options.extension}`), `${options.source} 图片地址应改为本地路径`);
+
+  const savedImage = await fs.readFile(path.join(rootDir, `${options.noteName}.assets`, `image-001.${options.extension}`));
+  assert.equal(savedImage.length, 4, `${options.source} 本地图片文件内容错误`);
 }
 
 async function testWechatImages(rootDir) {

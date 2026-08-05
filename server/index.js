@@ -41,7 +41,7 @@ const DEFAULT_SOURCE_FOLDERS = {
   zsxq: "知识星球",
   wechat: "微信公众号"
 };
-const IMAGE_LOCALIZATION_SOURCES = new Set(["zsxq", "wechat"]);
+const IMAGE_LOCALIZATION_SOURCES = new Set(["zhihu", "caixin", "zsxq", "wechat"]);
 const MAX_IMAGE_BYTES = 15 * 1024 * 1024;
 const IMAGE_DOWNLOAD_TIMEOUT_MS = 15000;
 
@@ -482,6 +482,14 @@ function isAllowedImageUrl(value, source) {
 
   if (source === "wechat") {
     return url.hostname === "qpic.cn" || url.hostname.endsWith(".qpic.cn");
+  }
+
+  if (source === "zhihu") {
+    return url.hostname === "zhimg.com" || url.hostname.endsWith(".zhimg.com");
+  }
+
+  if (source === "caixin") {
+    return url.hostname === "caixin.com" || url.hostname.endsWith(".caixin.com");
   }
 
   return false;

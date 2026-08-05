@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.9.2] - 2026-08-05
+
+### Added
+
+- Save rendered inline images from Zhihu and Caixin beside the Markdown note.
+- Normalize lazy-loaded image URLs in Zhihu articles and answers.
+
+### Security and privacy
+
+- Image downloads remain limited to allowlisted source hosts under `zhimg.com`, `caixin.com`, `zsxq.com`, and `qpic.cn`.
+- Failed image downloads keep the original remote URL instead of failing the note save.
+
 ## [0.9.1] - 2026-08-05
 
 ### Added
@@ -47,6 +59,7 @@ First public release under the name **Chinese Web to Obsidian**.
 - The extension reads only content rendered in the active tab.
 - No site cookies, credentials, private APIs, analytics, or cloud content storage are used.
 
+[0.9.2]: https://github.com/wanghaha1997/chinese-web-to-obsidian/releases/tag/v0.9.2
 [0.9.1]: https://github.com/wanghaha1997/chinese-web-to-obsidian/releases/tag/v0.9.1
 [0.9.0]: https://github.com/wanghaha1997/chinese-web-to-obsidian/releases/tag/v0.9.0
 [0.8.1]: https://github.com/wanghaha1997/chinese-web-to-obsidian/releases/tag/v0.8.1

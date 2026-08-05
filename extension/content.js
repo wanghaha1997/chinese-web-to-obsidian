@@ -228,7 +228,7 @@
 
       seenContentElements.add(contentElement);
 
-      const html = contentElement.innerHTML.trim();
+      const html = cleanContentHtml(contentElement);
       const text = normalizeText(contentElement.textContent);
 
       if (!html || !text) {
@@ -279,7 +279,7 @@
       return [];
     }
 
-    const html = contentElement.innerHTML.trim();
+    const html = cleanContentHtml(contentElement);
     const text = normalizeText(contentElement.textContent);
 
     if (!html || !text) {

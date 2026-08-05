@@ -28,6 +28,7 @@ async function testZhuanlanArticle() {
         <article class="Post-RichTextContainer">
           <p>这是专栏正文第一段。</p>
           <p>这是专栏正文第二段。</p>
+          <img src="data:image/svg+xml,placeholder" data-original="https://picx.zhimg.com/test/article-image.png" alt="知乎配图">
         </article>
       </body>
     </html>`, "https://zhuanlan.zhihu.com/p/123456");
@@ -35,6 +36,7 @@ async function testZhuanlanArticle() {
   assertEqual(data.title, "专栏文章标题", "专栏标题提取失败");
   assertEqual(data.author, "专栏作者", "专栏作者提取失败");
   assertIncludes(data.html, "这是专栏正文第一段。", "专栏正文提取失败");
+  assertIncludes(data.html, 'src="https://picx.zhimg.com/test/article-image.png"', "知乎懒加载图片地址未还原");
   assertEqual(data.url, "https://zhuanlan.zhihu.com/p/123456", "专栏 URL 提取失败");
   assertEqual(data.candidates.length, 1, "专栏候选数量错误");
 }
@@ -140,6 +142,7 @@ async function testCaixinArticle() {
           <p>文｜财新 于海荣</p>
           <p>供强需弱是根源于中国的增长模式和制度逻辑的结构性矛盾。</p>
           <p>从未来角度讲，讨论收入分配政策比讨论经济增长政策更为关键和重要。</p>
+          <img src="data:image/svg+xml,placeholder" data-src="https://img.caixin.com/test/article-image.jpg" alt="财新配图">
         </div>
       </body>
     </html>`, "https://economy.caixin.com/2026-06-24/102457132.html");
@@ -148,6 +151,7 @@ async function testCaixinArticle() {
   assertEqual(data.title, "如何解决供强需弱？学者称收入分配或比宏观政策更重要", "财新标题提取失败");
   assertEqual(data.author, "于海荣", "财新作者提取失败");
   assertIncludes(data.html, "供强需弱是根源于中国", "财新正文提取失败");
+  assertIncludes(data.html, 'src="https://img.caixin.com/test/article-image.jpg"', "财新懒加载图片地址未还原");
   assertEqual(data.candidates.length, 1, "财新候选数量错误");
 }
 
