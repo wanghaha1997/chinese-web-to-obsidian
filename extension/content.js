@@ -26,6 +26,7 @@
     const selectedCandidate = candidates[0] || null;
     const author = selectedCandidate ? selectedCandidate.author : getPageAuthor();
     const html = selectedCandidate ? selectedCandidate.html : "";
+    const publishedAt = selectedCandidate ? selectedCandidate.publishedAt : getZhihuPublishedAt(document);
     const warnings = [];
 
     if (!title) {
@@ -46,6 +47,7 @@
       author: author || "未知作者",
       url: location.href,
       html,
+      publishedAt,
       candidates,
       warnings
     };
@@ -62,6 +64,7 @@
     const contentElement = getBestCaixinContentElement();
     const html = contentElement ? cleanContentHtml(contentElement) : "";
     const text = contentElement ? normalizeText(contentElement.textContent) : "";
+    const publishedAt = getCaixinPublishedAt();
     const warnings = [];
 
     if (!title) {
@@ -84,7 +87,8 @@
       author: normalizedAuthor,
       html,
       textPreview: text.slice(0, 80),
-      url: location.href
+      url: location.href,
+      publishedAt
     }] : [];
 
     return {
@@ -93,6 +97,7 @@
       author: normalizedAuthor,
       url: location.href,
       html,
+      publishedAt,
       candidates,
       warnings
     };
@@ -254,6 +259,7 @@
       seenTextFingerprints.add(textFingerprint);
 
       const author = getContainerAuthor(container) || getPageAuthor() || "未知作者";
+      const publishedAt = getZhihuPublishedAt(container);
 
       candidates.push({
         id: `candidate-${candidates.length + 1}`,
@@ -261,7 +267,8 @@
         author,
         html,
         textPreview: text.slice(0, 80),
-        url: location.href
+        url: location.href,
+        publishedAt
       });
     }
 
@@ -287,6 +294,7 @@
     }
 
     const author = getPageAuthor() || "未知作者";
+    const publishedAt = getZhihuPublishedAt(document);
 
     return [{
       id: "article",
@@ -294,7 +302,8 @@
       author,
       html,
       textPreview: text.slice(0, 80),
-      url: location.href
+      url: location.href,
+      publishedAt
     }];
   }
 
@@ -317,6 +326,53 @@
 
       if (content) {
         return content;
+      }
+    }
+
+    return "";
+  }
+
+  function getZhihuPublishedAt(root) {
+    return getFirstDateValue(root, [
+      "meta[itemprop='datePublished']",
+      "meta[property='article:published_time']",
+      "[itemprop='datePublished']",
+      "time[datetime]",
+      ".ContentItem-time",
+      ".AnswerItem-time",
+      ".Post-Header .ContentItem-time"
+    ]);
+  }
+
+  function getCaixinPublishedAt() {
+    return getFirstDateValue(document, [
+      "meta[property='article:published_time']",
+      "meta[name='publishdate']",
+      "meta[name='publish_time']",
+      "meta[name='pubdate']",
+      "time[datetime]",
+      ".article-time",
+      ".articleInfo",
+      ".article-info",
+      ".artInfo"
+    ]);
+  }
+
+  function getFirstDateValue(root, selectors) {
+    for (const selector of selectors) {
+      const elements = Array.from(root.querySelectorAll(selector));
+
+      for (const element of elements) {
+        const value = normalizeText(
+          element.getAttribute("content") ||
+          element.getAttribute("datetime") ||
+          element.textContent
+        );
+        const match = value.match(/\d{4}(?:年\d{1,2}月\d{1,2}日|[-/.]\d{1,2}[-/.]\d{1,2})(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?/);
+
+        if (match) {
+          return match[0];
+        }
       }
     }
 

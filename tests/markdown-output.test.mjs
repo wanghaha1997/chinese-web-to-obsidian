@@ -1,7 +1,17 @@
 import { addSaveDatePrefix, buildMarkdown } from "../server/index.js";
 
 const datedTitle = addSaveDatePrefix("测试标题", "2026-08-06T12:00:00.000Z");
-assertEqual(datedTitle, "8.06 测试标题", "标题应增加保存日期前缀");
+assertEqual(datedTitle, "8.06 测试标题", "标题应增加日期前缀");
+assertEqual(
+  addSaveDatePrefix("发布时间标题", "2026-07-27 23:45", "2026-08-06T12:00:00.000Z"),
+  "7.27 发布时间标题",
+  "标题应优先使用文章发布时间"
+);
+assertEqual(
+  addSaveDatePrefix("回退日期标题", "", "2026-08-06T12:00:00.000Z"),
+  "8.06 回退日期标题",
+  "无法获取发布时间时应回退到保存日期"
+);
 assertEqual(
   addSaveDatePrefix(datedTitle, "2026-08-06T12:00:00.000Z"),
   datedTitle,
@@ -53,7 +63,7 @@ const wechatMarkdown = buildMarkdown({
   title: "公众号测试标题",
   author: "署名作者",
   url: "https://mp.weixin.qq.com/s/test",
-  html: '<p>公众号测试正文。</p><img src="./公众号测试标题.assets/image-001.jpg" alt="正文图片">',
+  html: '<img src="./公众号测试标题.assets/image-001.jpg" alt="正文图片"><p>公众号测试正文。</p>',
   publishedAt: "2026-07-27 23:45",
   savedAt: "2026-07-31T12:00:00.000Z"
 });
@@ -63,6 +73,7 @@ assertIncludes(wechatMarkdown, "  - 微信公众号", "微信公众号标签应�
 assertIncludes(wechatMarkdown, 'author: "[[署名作者]]"', "微信公众号作者应保存为 Obsidian 内部链接");
 assertIncludes(wechatMarkdown, 'published_at: "2026-07-27"', "微信公众号发布时间应转成标准日期");
 assertIncludes(wechatMarkdown, "![正文图片](./公众号测试标题.assets/image-001.jpg)", "微信公众号本地图片链接应写入 Markdown");
+assertBefore(wechatMarkdown, "公众号测试正文。", "![正文图片]", "正文图片应放在文章文字之后");
 
 const zsxqMarkdown = buildMarkdown({
   source: "zsxq",
@@ -127,6 +138,12 @@ function assertIncludes(actual, expected, message) {
 
 function assertNotIncludes(actual, expected, message) {
   if (actual.includes(expected)) {
+    throw new Error(`${message}，实际内容：${actual}`);
+  }
+}
+
+function assertBefore(actual, first, second, message) {
+  if (actual.indexOf(first) < 0 || actual.indexOf(second) < 0 || actual.indexOf(first) >= actual.indexOf(second)) {
     throw new Error(`${message}，实际内容：${actual}`);
   }
 }

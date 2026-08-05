@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.9.3] - 2026-08-05
+
+### Changed
+
+- Prefix note titles and filenames with the article publication date when available, falling back to the local save date.
+- Extract rendered publication dates for Zhihu answers, Zhihu column articles, and Caixin articles.
+- Place body images after the article text while preserving their original order.
+
 ## [0.9.2] - 2026-08-05
 
 ### Added
@@ -59,6 +67,7 @@ First public release under the name **Chinese Web to Obsidian**.
 - The extension reads only content rendered in the active tab.
 - No site cookies, credentials, private APIs, analytics, or cloud content storage are used.
 
+[0.9.3]: https://github.com/wanghaha1997/chinese-web-to-obsidian/releases/tag/v0.9.3
 [0.9.2]: https://github.com/wanghaha1997/chinese-web-to-obsidian/releases/tag/v0.9.2
 [0.9.1]: https://github.com/wanghaha1997/chinese-web-to-obsidian/releases/tag/v0.9.1
 [0.9.0]: https://github.com/wanghaha1997/chinese-web-to-obsidian/releases/tag/v0.9.0

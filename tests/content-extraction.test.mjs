@@ -21,7 +21,10 @@ console.log("content extraction tests passed");
 async function testZhuanlanArticle() {
   const data = await extractFromHtml(`<!doctype html>
     <html>
-      <head><title>专栏标题 - 知乎</title></head>
+      <head>
+        <title>专栏标题 - 知乎</title>
+        <meta itemprop="datePublished" content="2026-05-18T09:30:00">
+      </head>
       <body>
         <h1>专栏文章标题</h1>
         <a class="UserLink-link">专栏作者</a>
@@ -37,6 +40,7 @@ async function testZhuanlanArticle() {
   assertEqual(data.author, "专栏作者", "专栏作者提取失败");
   assertIncludes(data.html, "这是专栏正文第一段。", "专栏正文提取失败");
   assertIncludes(data.html, 'src="https://picx.zhimg.com/test/article-image.png"', "知乎懒加载图片地址未还原");
+  assertEqual(data.publishedAt, "2026-05-18T09:30:00", "专栏发布时间提取失败");
   assertEqual(data.url, "https://zhuanlan.zhihu.com/p/123456", "专栏 URL 提取失败");
   assertEqual(data.candidates.length, 1, "专栏候选数量错误");
 }
@@ -77,12 +81,14 @@ async function testMultipleQuestionAnswers() {
         <div class="QuestionHeader-title">知乎问题标题</div>
         <div class="AnswerItem">
           <div class="AuthorInfo-name">答主 A</div>
+          <div class="ContentItem-time">发布于 2026-04-02 10:30</div>
           <div class="RichContent-inner">
             <p>A 的回答。</p>
           </div>
         </div>
         <div class="AnswerItem">
           <div class="AuthorInfo-name">答主 B</div>
+          <div class="ContentItem-time">编辑于 2026-04-03 11:45</div>
           <div class="RichContent-inner">
           <p>这是回答正文第一段。</p>
           <p>这是回答正文第二段，内容更长。</p>
@@ -94,6 +100,8 @@ async function testMultipleQuestionAnswers() {
   assertEqual(data.candidates.length, 2, "多回答候选数量错误");
   assertEqual(data.candidates[0].author, "答主 A", "第一个候选作者错误");
   assertEqual(data.candidates[1].author, "答主 B", "第二个候选作者错误");
+  assertEqual(data.candidates[0].publishedAt, "2026-04-02 10:30", "第一个候选发布时间错误");
+  assertEqual(data.candidates[1].publishedAt, "2026-04-03 11:45", "第二个候选发布时间错误");
   assertIncludes(data.candidates[0].html, "A 的回答", "第一个候选正文错误");
   assertIncludes(data.candidates[1].html, "这是回答正文第二段", "第二个候选正文错误");
 }
@@ -152,6 +160,7 @@ async function testCaixinArticle() {
   assertEqual(data.author, "于海荣", "财新作者提取失败");
   assertIncludes(data.html, "供强需弱是根源于中国", "财新正文提取失败");
   assertIncludes(data.html, 'src="https://img.caixin.com/test/article-image.jpg"', "财新懒加载图片地址未还原");
+  assertEqual(data.publishedAt, "2026-06-24 19:58:24", "财新发布时间提取失败");
   assertEqual(data.candidates.length, 1, "财新候选数量错误");
 }
 

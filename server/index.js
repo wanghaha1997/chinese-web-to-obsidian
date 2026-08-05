@@ -330,7 +330,8 @@ function normalizePayload(body) {
   const url = cleanText(body.url);
   const html = typeof body.html === "string" ? body.html : "";
   const savedAt = parseSavedAt(body.savedAt);
-  const title = addSaveDatePrefix(rawTitle, savedAt);
+  const publishedAt = cleanText(body.publishedAt);
+  const title = addSaveDatePrefix(rawTitle, publishedAt, savedAt);
 
   if (!SOURCES[body.source]) {
     throw userError(`source 必须是以下值之一：${Object.keys(SOURCES).join(", ")}`);
@@ -352,7 +353,7 @@ function normalizePayload(body) {
     html,
     savedAt,
     planet: cleanText(body.planet),
-    publishedAt: cleanText(body.publishedAt),
+    publishedAt,
     comments: normalizeComments(body.comments)
   };
 }
@@ -524,7 +525,7 @@ function safeImageHost(value) {
 }
 
 function buildMarkdown(payload) {
-  let markdownBody = turndownService.turndown(payload.html).trim();
+  let markdownBody = turndownService.turndown(moveImagesAfterText(payload.html)).trim();
 
   if (payload.source === "zsxq") {
     markdownBody = postProcessZsxqMarkdown(markdownBody, payload.planet);
@@ -546,6 +547,31 @@ function buildMarkdown(payload) {
     : `\n\n# ${payload.title}\n\n> 作者：${authorLink}\n> 原文：${payload.url}\n\n`;
 
   return `---\ntitle: ${title}\nauthor: ${author}\nsource: ${sourceLabel}\n${planetLine}${publishedLine}url: ${url}\nsaved_at: ${savedDate}\ntags:\n  - ${sourceLabel}${planetTag}\n  - 待整理\n---${intro}${markdownBody}${commentsSection}`;
+}
+
+function moveImagesAfterText(html) {
+  const dom = new JSDOM(`<body>${html}</body>`);
+  const document = dom.window.document;
+  const body = document.body;
+  const images = Array.from(body.querySelectorAll("img"));
+
+  if (images.length === 0) {
+    return html;
+  }
+
+  const movedImages = images.map((image) => image.cloneNode(true));
+
+  for (const image of images) {
+    image.remove();
+  }
+
+  for (const image of movedImages) {
+    const paragraph = document.createElement("p");
+    paragraph.appendChild(image);
+    body.appendChild(paragraph);
+  }
+
+  return body.innerHTML;
 }
 
 function buildZsxqIntro(payload) {
@@ -649,14 +675,14 @@ function parseSavedAt(value) {
   return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
 }
 
-function addSaveDatePrefix(title, savedAt) {
+function addSaveDatePrefix(title, publishedAt, savedAt = publishedAt) {
   const normalizedTitle = cleanText(title) || "未命名网页内容";
 
   if (/^\d{1,2}\.\d{2}(?:\s|$)/.test(normalizedTitle)) {
     return normalizedTitle;
   }
 
-  const { month, day } = getLocalSaveDateParts(savedAt);
+  const { month, day } = getSourceDateParts(publishedAt) || getLocalSaveDateParts(savedAt);
   return `${month}.${day} ${normalizedTitle}`;
 }
 
@@ -678,15 +704,29 @@ function getLocalSaveDateParts(savedAt) {
 
 function formatSourceDate(value) {
   const text = cleanText(value);
-  const chineseDate = text.match(/^(\d{4})年(\d{1,2})月(\d{1,2})日/);
+  const dateParts = getSourceDateParts(text);
 
-  if (chineseDate) {
-    const [, year, month, day] = chineseDate;
-    return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+  if (dateParts) {
+    return `${dateParts.year}-${String(dateParts.month).padStart(2, "0")}-${dateParts.day}`;
   }
 
-  const isoDate = text.match(/^(\d{4}-\d{2}-\d{2})/);
-  return isoDate ? isoDate[1] : text.slice(0, 10);
+  return text.slice(0, 10);
+}
+
+function getSourceDateParts(value) {
+  const text = cleanText(value);
+  const match = text.match(/(\d{4})(?:年|[-/.])(\d{1,2})(?:月|[-/.])(\d{1,2})(?:日)?/);
+
+  if (!match) {
+    return null;
+  }
+
+  const [, year, month, day] = match;
+  return {
+    year,
+    month: Number(month),
+    day: day.padStart(2, "0")
+  };
 }
 
 function escapeYamlValue(value) {
